@@ -14,7 +14,7 @@ extern int tokenval;
 extern void yyerror(char *message);
 extern int yylex();
 
-}
+%}
 
 %left OR
 %left AND
@@ -74,10 +74,10 @@ FuncBody: FuncBody U
           ;
 
 RtValue: Identifier {$$ = newrtvl($1,0);}
-          | Num {$$ = newrtvl($1,1);}
-          ;
+        | Num {$$ = newrtvl($1,1);}
+        ;
 
-U: Vardefn {$$ = $1;}
+U: VarDefn {$$ = $1;}
  | Expression {$$ = $1;}
  ;
 
@@ -87,8 +87,15 @@ Expression: Identifier ASSIGN RtValue ADD RtValue {$$ = newexpnode1($1,$3,$5,0);
           | Identifier ASSIGN RtValue DIV RtValue {$$ = newexpnode1($1,$3,$5,3);}
           | Identifier ASSIGN RtValue MOD RtValue {$$ = newexpnode1($1,$3,$5,4);}
 
-          | NOT RtValue {$$ = newexpnode2($2);}
-          | SUB RtValue %prec MINUS {$$ = newexpnode3($2);}
+          | Identifier ASSIGN RtValue AND RtValue {$$ = newexpnode1($1,$3,$5,5);}
+          | Identifier ASSIGN RtValue OR RtValue {$$ = newexpnode1($1,$3,$5,6);}
+          | Identifier ASSIGN RtValue SM RtValue {$$ = newexpnode1($1,$3,$5,7);}
+          | Identifier ASSIGN RtValue EQ RtValue {$$ = newexpnode1($1,$3,$5,8);}
+          | Identifier ASSIGN RtValue GR RtValue {$$ = newexpnode1($1,$3,$5,9);}
+          | Identifier ASSIGN RtValue UEQ RtValue {$$ = newexpnode1($1,$3,$5,10);}
+
+          | Identifier ASSIGN NOT RtValue {$$ = newexpnode2($1,$4);}
+          | Identifier ASSIGN SUB RtValue %prec MINUS {$$ = newexpnode3($1,$4);}
 
           | Identifier ASSIGN RtValue {$$ = newexpnode4($1,$3);}
           | Identifier '[' RtValue ']' ASSIGN RtValue {$$ = newexpnode5($1,$3,$6);}
@@ -105,7 +112,7 @@ Expression: Identifier ASSIGN RtValue ADD RtValue {$$ = newexpnode1($1,$3,$5,0);
           | Label ':' {$$ = newexpnode9($1);}
           | PARAM RtValue {$$ = newexpnode10($2);}
           | Identifier ASSIGN CALL Func {$$ = newexpnode11($1,$4);}
-          | RETURN RtValue {SS = newexpnode12($2);}
+          | RETURN RtValue {$$ = newexpnode12($2);}
           ;
 
 Identifier: ID {$$ = newidnode(tokenString);}
@@ -114,7 +121,7 @@ Identifier: ID {$$ = newidnode(tokenString);}
 Num: NUMBER {$$ = newnumnode(tokenval);}
    ;
 
-label: LABEL {$$ = newlabnode(tokenString);}
+Label: LABEL {$$ = newlabnode(tokenString);}
      ;
 
 Func: FUNC {$$ = newfuncnode(tokenString);}
@@ -133,6 +140,6 @@ int main(int argc,char **argv)
         yyin = file1;
     }
     yyparse();
-    PrintTree(savedTree,0);
+    Printree(savedTree,0);
     return 0;
 }

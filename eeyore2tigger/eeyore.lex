@@ -51,15 +51,15 @@ ffunc   f_{letter}({letter}|{digit})*
 "%"        {PR();return MOD;}
 "!"        {PR();return NOT;}
 
-':'        {PR();return ':';}
-'['        {PR();return '[';}
-']'        {PR();return ']';}
+":"        {PR();return ':';}
+"["        {PR();return '[';}
+"]"        {PR();return ']';}
 
 %%
 
 void PR()
 {
-    fprintf(stderr,"%s",yytext);
+    //fprintf(stderr,"%s",yytext);
 }
 
 int yywrap()

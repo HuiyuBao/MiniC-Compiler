@@ -15,19 +15,25 @@ using namespace std;
 
 typedef int TokenType;
 
-typedef enum{VarDefK,FuncDefK,ExpK} NodeKind;
-typedef enum{CalOpK,NotK,MinusK,SSK,ASK,SAK,IFK,
-              GotoK,LabK,ParaK,CallK,RetK} ExpKind;
-
+typedef enum{VarDefK,FuncDefK,RtK,ExpK,
+              IdK,NumK,LabK,FunK} NodeKind;
+typedef enum{TwOpK,NotK,MinusK,SSK,ASK,SAK,IFK,
+              GotoK,LabelK,ParaK,CallK,RetK} ExpKind;
+typedef enum{VarK,NumberK}RtVKind;
+typedef enum{CalOpK,LogOpK}TwopKind;
 typedef enum{AddK,SubK,MulK,DivK,ModK}CalKind;
 typedef enum{AndK,OrK,SmK,EqK,GrK,UeqK}LogKind;
+
 
 typedef struct treenode
 {
     struct treenode *child[MAXCHILDREN];
     struct treenode *sibling;
     NodeKind nodekind;
-    ExpKind exp;
+    union{
+          RtVKind rtvkind;
+          ExpKind exp;}speckind;
+    TwopKind twop;
     union{CalKind calop;
           LogKind logop;
           int val;
