@@ -23,6 +23,7 @@ Treenode *newfuncnode(char *name);
 
 void init(Treenode *root);
 void liveness(Treenode *root);
+void Generate(Treenode *root);
 void Printree(Treenode *root,int dep);
 
 

@@ -14,6 +14,7 @@ using namespace std;
 #define MAXCHILDREN 10
 #define MAXTOKENLEN 40
 #define BITLENGTH 70
+#define REGNUM 28
 
 typedef int TokenType;
 
@@ -58,8 +59,29 @@ typedef struct treenode
 typedef struct var
 {
     int no;
-    int localno;
+    int localno;// -1 if global varient
+    int regid;// where is the varient
+    string tmpname;
+    var()
+    {
+        regid = -1;
+        localno = -1;
+    }
 }Var;
+
+struct reg
+{
+    int varsto;// what varient the reg store
+    int wherereg;// where is the reg num
+    bool useable;
+    reg()
+    {
+        varsto = -1;
+
+    }
+};
+
+static reg Reg[REGNUM];
 
 static map<string,Treenode *>labpos; // where is the label
 static map<string,Var *>symtab; //

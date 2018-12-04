@@ -1850,6 +1850,7 @@ int main(int argc,char **argv)
 
     init(savedTree);
     liveness(savedTree);
+    Generate(savedTree);
     //Printree(savedTree,0);
     return 0;
 }

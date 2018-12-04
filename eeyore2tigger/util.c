@@ -354,7 +354,6 @@ void init(Treenode *root)
 void liveness(Treenode *root)
 {
     Treenode *t;
-    int tttttt;
     while(root!=NULL)
     {
         if(root->nodekind == FuncDefK)
@@ -451,6 +450,107 @@ void liveness(Treenode *root)
             end->presibling->sibling = NULL;
             free(begin); free(end);
         }
+        root = root->sibling;
+    }
+}
+
+string regname[] = {"x0","s0","s1","s2","s3","s4","s5","s6","s7","s8","s9","s10","s11",
+                      "t0","t1","t2","t3","t4","t5","t6","a0","a1","a2","a3","a4","a5","a6","a7"};
+// x0=0  t4:array operation  t5 & t6: const   t7:swap
+//  No:1-16 can use and not used a reg
+
+
+void genvardef(Treenode *root)
+{
+    Var *tmp = symtab[string(root->attr.name)];
+    tmp->tmpname = "v" + to_string(tmp->no);
+    if(root->arrnum == 0)cout<<tmp->tmpname<<" = 0"<<endl;
+    else cout<<tmp->tmpname<<" = malloc "<<root->arrnum<<endl;
+}
+
+
+
+int regallo(Treenode *root,Var *vari)
+{
+    int i;
+    for(i=0;i<REGNUM;i++)
+    {
+        if(Reg[i].useable == 0)continue;
+        if(Reg[i].varsto != -1)
+        {
+            if(root->live[varsto] == 0)expire(i);
+        }
+        if(root->live[varsto] == -1)
+        {
+            setalloc(vari,i);
+            return i;
+        }
+    }
+    
+}
+
+void genexp1(Treenode *root)
+{
+
+}
+
+void genexp(Treenode *root)
+{
+    while(root!=NULL)
+    {
+        if(root->nodekind == ExpK)
+        {
+            if(root->speckind.exp == TwOpK)genexp1(root);
+            else if(root->speckind.exp == NotK)genexp2(root);
+            else if(root->speckind.exp == MinusK)genexp3(root);
+            else if(root->speckind.exp == SSK)genexp4(root);
+            else if(root->speckind.exp == ASK)genexp5(root);
+            else if(root->speckind.exp == SAK)genexp6(root);
+            else if(root->speckind.exp == IFK)genexp7(root);
+            else if(root->speckind.exp == GotoK)genexp8(root);
+            else if(root->speckind.exp == LabelK)genexp9(root);
+            else if(root->speckind.exp == ParaK)genexp10(root);
+            else if(root->speckind.exp == CallK)genexp11(root);
+            else if(root->speckind.exp == RetK)genexp12(root);
+        }
+        root = root->sibling;
+    }
+}
+
+void genfundef(Treenode *root)
+{
+    cout<<root->attr.name<<" ["<<root->child[0]->attr.val<<"]["<<root->arrnum<<"]"<<endl;
+
+    for(int i=0;i<REGNUM;i++)Reg[i].useable = 1;
+    Reg[0].useable = 0;
+    for(int i=0;i<root->child[0]->attr.val;i++)Reg[20+i].useable = 0;
+
+    genexp(root->child[1]);
+    cout<<"end "<<root->attr.name<<endl;
+}
+
+void Generate(Treenode *root)
+{
+    Treenode *tmp = root;
+    while(root!=NULL)
+    {
+        if(root->nodekind == VarDefK)genvardef(root);
+        else
+        {
+            Treenode *t = root->child[1];
+            while(t!=NULL)
+            {
+                if(t->nodekind == VarDefK && t->arrnum != 0)genvardef(t);
+                t = t->sibling;
+            }
+        }
+        root = root->sibling;
+    }
+
+    root = tmp;
+    while(root!=NULL)
+    {
+        if(root->nodekind == FuncDefK)genfundef(root);
         root = root->sibling;
     }
 }
