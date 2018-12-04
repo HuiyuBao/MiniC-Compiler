@@ -8,10 +8,12 @@
 #include <algorithm>
 #include <iostream>
 #include <map>
+#include <bitset>
 using namespace std;
 
 #define MAXCHILDREN 10
 #define MAXTOKENLEN 40
+#define BITLENGTH 70
 
 typedef int TokenType;
 
@@ -29,6 +31,9 @@ typedef struct treenode
 {
     struct treenode *child[MAXCHILDREN];
     struct treenode *sibling;
+    struct treenode *presibling;
+    struct treenode *succ[4];
+    bitset<BITLENGTH>live;
     NodeKind nodekind;
     union{
           RtVKind rtvkind;
@@ -39,12 +44,25 @@ typedef struct treenode
           int val;
           char *name;}attr;
     int arrnum; // 0 if sing var; else if arr
+    // if node is a function define, arrnum is the num of local variable
     treenode()
     {
         for(int i=0;i<MAXCHILDREN;i++)child[i] = NULL;
         sibling = NULL;
+        presibling = NULL;
+        arrnum = 0;
+        live.reset();
     }
 }Treenode;
+
+typedef struct var
+{
+    int no;
+    int localno;
+}Var;
+
+static map<string,Treenode *>labpos; // where is the label
+static map<string,Var *>symtab; //
 
 /*
 typedef struct environment

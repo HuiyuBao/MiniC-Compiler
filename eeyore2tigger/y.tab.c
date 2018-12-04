@@ -1847,6 +1847,9 @@ int main(int argc,char **argv)
         yyin = file1;
     }
     yyparse();
-    Printree(savedTree,0);
+
+    init(savedTree);
+    liveness(savedTree);
+    //Printree(savedTree,0);
     return 0;
 }

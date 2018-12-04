@@ -20,6 +20,9 @@ Treenode *newidnode(char *name);
 Treenode *newnumnode(int val);
 Treenode *newlabnode(char *name);
 Treenode *newfuncnode(char *name);
+
+void init(Treenode *root);
+void liveness(Treenode *root);
 void Printree(Treenode *root,int dep);
 
 
