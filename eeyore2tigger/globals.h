@@ -13,7 +13,7 @@ using namespace std;
 
 #define MAXCHILDREN 10
 #define MAXTOKENLEN 40
-#define BITLENGTH 70
+#define BITLENGTH 100
 #define REGNUM 28
 
 typedef int TokenType;
@@ -35,6 +35,7 @@ typedef struct treenode
     struct treenode *presibling;
     struct treenode *succ[4];
     bitset<BITLENGTH>live;
+    int numinfun;
     NodeKind nodekind;
     union{
           RtVKind rtvkind;
@@ -62,10 +63,13 @@ typedef struct var
     int localno;// -1 if global varient
     int regid;// where is the varient
     string tmpname;
+    int edtm;
+    string funcname;
     var()
     {
         regid = -1;
         localno = -1;
+        edtm = -1;
     }
 }Var;
 
@@ -77,7 +81,7 @@ struct reg
     reg()
     {
         varsto = -1;
-
+        wherereg = -1;
     }
 };
 
@@ -85,6 +89,7 @@ static reg Reg[REGNUM];
 
 static map<string,Treenode *>labpos; // where is the label
 static map<string,Var *>symtab; //
+static string revsear[BITLENGTH];
 
 /*
 typedef struct environment

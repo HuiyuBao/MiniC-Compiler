@@ -728,6 +728,7 @@ void genstmt(Treenode *ro)
             genexp(ro->child[0]);
             genexp(ro->child[1]);
             string tmpvar = "t" +  to_string(tmpcnt++);
+            cout<<"var "<<tmpvar<<endl;
             cout<<tmpvar<<" = 4 * "<<ro->child[0]->tmpvarname<<endl;
             cout<<findident(ro)<<" ["<<tmpvar<<"] = "
                   <<ro->child[1]->tmpvarname<<endl;

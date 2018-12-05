@@ -59,7 +59,7 @@ ffunc   f_{letter}({letter}|{digit})*
 
 void PR()
 {
-    //fprintf(stderr,"%s",yytext);
+    fprintf(stderr,"%s",yytext);
 }
 
 int yywrap()

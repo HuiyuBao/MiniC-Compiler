@@ -1982,7 +1982,7 @@ void yyfree (void * ptr )
 
 void PR()
 {
-    //fprintf(stderr,"%s",yytext);
+    fprintf(stderr,"%s",yytext);
 }
 
 int yywrap()

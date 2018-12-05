@@ -289,8 +289,11 @@ void genesym(Treenode *root)
     {
         if(t->nodekind == VarDefK)
         {
-            symtab[string(t->attr.name)] = (Var *)malloc(sizeof(var));
-            symtab[string(t->attr.name)]->no = glovarcnt++;
+            symtab[string(t->attr.name)] = new Var;
+            symtab[string(t->attr.name)]->no = glovarcnt;
+            symtab[string(t->attr.name)]->tmpname = "v" + to_string(glovarcnt);
+            revsear[glovarcnt] = string(t->attr.name);
+            glovarcnt++;
         }
         t = t->sibling;
     }
@@ -305,8 +308,11 @@ void genesym(Treenode *root)
             {
                 if(tt->nodekind == VarDefK && tt->arrnum != 0)
                 {
-                    symtab[string(tt->attr.name)] = (Var *)malloc(sizeof(var));
-                    symtab[string(tt->attr.name)]->no = glovarcnt++;
+                    symtab[string(tt->attr.name)] = new Var;
+                    symtab[string(tt->attr.name)]->no = glovarcnt;
+                    symtab[string(t->attr.name)]->tmpname = "v" + to_string(glovarcnt);
+                    revsear[glovarcnt] = string(t->attr.name);
+                    glovarcnt++;
                 }
                 tt = tt->sibling;
             }
@@ -327,9 +333,10 @@ void genesym(Treenode *root)
                 if(tt->nodekind == VarDefK && tt->arrnum == 0)
                 {
                     string name = (string)(tt->attr.name);
-                    symtab[name] = (Var *)malloc(sizeof(var));
+                    symtab[name] = new Var;
                     symtab[name]->no = glovarcnt + totlocvarcnt;
                     symtab[name]->localno = t->arrnum;
+                    revsear[glovarcnt + totlocvarcnt] = name;
 
                     totlocvarcnt++;
                     t->arrnum ++;
@@ -341,6 +348,15 @@ void genesym(Treenode *root)
         }
         //cout<<"aaaa"<<t->arrnum<<endl;
         t = t->sibling;
+    }
+    for(int i=0;i<8;i++)
+    {
+        string name = "p" + to_string(i);
+        symtab[name] = new Var;
+        int xno = glovarcnt + totlocvarcnt + i;
+        revsear[xno] = name;
+        symtab[name]->no = xno;
+        symtab[name]->regid = 20 + i;
     }
 }
 
@@ -382,9 +398,11 @@ void liveness(Treenode *root)
             {
                 change = false;
                 t = end->presibling;
+
                 while(t != begin)
                 {
                     bitset<BITLENGTH>tmp = t->live;
+
                     if(t->nodekind == VarDefK)
                     {
                         t->live = t->sibling->live;
@@ -395,6 +413,7 @@ void liveness(Treenode *root)
                         if(t->speckind.exp == IFK)
                         {
                             t->live.reset();
+                            //printf("a\n");
                             if(t->succ[0]!=NULL)t->live |= t->succ[0]->live;
                             if(t->succ[1]!=NULL)t->live |= t->succ[1]->live;
                             if(t->child[0]->speckind.rtvkind == VarK)t->live.set(symtab[(string)(t->child[0]->attr.name)]->no);
@@ -402,11 +421,13 @@ void liveness(Treenode *root)
                         }
                         else if(t->speckind.exp == RetK)
                         {
+                            //printf("b\n");
                             t->live = t->sibling->live;
                             if(t->child[0]->speckind.rtvkind == VarK)t->live.set(symtab[(string)(t->child[0]->attr.name)]->no);
                         }
                         else if(t->speckind.exp == TwOpK)
                         {
+                            //printf("c\n");
                             t->live = t->sibling->live;
                             t->live.reset(symtab[(string)(t->child[0]->attr.name)]->no);
                             if(t->child[1]->speckind.rtvkind == VarK)t->live.set(symtab[(string)(t->child[1]->attr.name)]->no);
@@ -414,33 +435,39 @@ void liveness(Treenode *root)
                         }
                         else if(t->speckind.exp == NotK || t->speckind.exp == MinusK || t->speckind.exp == SSK)
                         {
+                            //printf("d\n");
                             t->live = t->sibling->live;
                             t->live.reset(symtab[(string)(t->child[0]->attr.name)]->no);
                             if(t->child[1]->speckind.rtvkind == VarK)t->live.set(symtab[(string)(t->child[1]->attr.name)]->no);
                         }
                         else if(t->speckind.exp == ASK)
                         {
+                            //printf("e\n");
                             t->live = t->sibling->live;
                             if(t->child[1]->speckind.rtvkind == VarK)t->live.set(symtab[(string)(t->child[1]->attr.name)]->no);
                             if(t->child[2]->speckind.rtvkind == VarK)t->live.set(symtab[(string)(t->child[2]->attr.name)]->no);
                         }
                         else if(t->speckind.exp == SAK)
                         {
+                            //printf("f\n");
                             t->live = t->sibling->live;
                             t->live.reset(symtab[(string)(t->child[0]->attr.name)]->no);
                             if(t->child[2]->speckind.rtvkind == VarK)t->live.set(symtab[(string)(t->child[2]->attr.name)]->no);
                         }
                         else if(t->speckind.exp == ParaK)
                         {
+                            //printf("g\n");
                             t->live = t->sibling->live;
                             if(t->child[0]->speckind.rtvkind == VarK)t->live.set(symtab[(string)(t->child[0]->attr.name)]->no);
                         }
                         else if(t->speckind.exp == CallK)
                         {
+                            //printf("h\n");
                             t->live = t->sibling->live;
                             t->live.reset(symtab[(string)(t->child[0]->attr.name)]->no);
                         }
-                        else t->live = t->sibling->live;
+                        else if(t->succ[0]!=NULL)t->live = t->succ[0]->live;
+                        else t->live = tmp;
                     }
                     if(t->live != tmp)change = true;
                     t = t->presibling;
@@ -456,62 +483,459 @@ void liveness(Treenode *root)
 
 string regname[] = {"x0","s0","s1","s2","s3","s4","s5","s6","s7","s8","s9","s10","s11",
                       "t0","t1","t2","t3","t4","t5","t6","a0","a1","a2","a3","a4","a5","a6","a7"};
-// x0=0  t4:array operation  t5 & t6: const   t7:swap
-//  No:1-16 can use and not used a reg
+// x0=0  t3(16):array op  t4(17)&t5(18):const  t6(19):swap
+//  No:1-16 and no-used a reg can be used
 
 
 void genvardef(Treenode *root)
 {
     Var *tmp = symtab[string(root->attr.name)];
-    tmp->tmpname = "v" + to_string(tmp->no);
+    //tmp->tmpname = "v" + to_string(tmp->no);
     if(root->arrnum == 0)cout<<tmp->tmpname<<" = 0"<<endl;
     else cout<<tmp->tmpname<<" = malloc "<<root->arrnum<<endl;
 }
 
+Var vainrg[10000];
+int vainrgnum;
+int ifprint = 0;
 
-
-int regallo(Treenode *root,Var *vari)
+void expire(int no,int real)
 {
     int i;
-    for(i=0;i<REGNUM;i++)
+    if(no == -1)return ;
+    if(Reg[no].varsto == -1)return ;
+    for(i=0;i<vainrgnum;i++)
+        if(vainrg[i].regid == no)break;
+        //printf("%d ",vainrg[i].regid);
+    //printf("something %d %d %d %d\n",i,no,vainrg[i].regid,vainrg[i].no);
+    if(vainrg[i].no < glovarcnt)
     {
+        if(ifprint)cout<<endl<<"expire reg:"<<regname[no]<<" var:v"<<vainrg[i].no<<endl;
+        cout<<"t6"<<" = "<<regname[no]<<endl;
+        cout<<"load v"<<vainrg[i].no<<" "<<regname[no]<<endl;
+        cout<<"loadaddr v"<<vainrg[i].no<<" t3"<<endl;
+        cout<<"t3[0] = t6"<<endl;
+        if(ifprint)cout<<endl;
+    }
+    else
+    {
+        if(ifprint)cout<<endl<<"expire reg:"<<regname[no]<<" var:"<<vainrg[i].localno<<endl;
+        cout<<"t6 = "<<regname[no]<<endl;
+        cout<<"load "<<vainrg[i].localno<<" "<<regname[no]<<endl;
+        cout<<"store t6 "<<vainrg[i].localno<<endl;
+        if(ifprint)cout<<endl;
+    }
+    if(real == 1)
+    {
+        Var *tmp = symtab[revsear[vainrg[i].no]];
+        tmp->regid = -1;
+        Reg[no].varsto = -1;
+        Reg[no].wherereg = -1;
+        vainrg[i].regid = -1;
+        vainrg[i].edtm = -1;
+    }
+}
+
+void setalloc(Treenode *root,Var *vari,int no,string funcname)
+{
+    int i;
+    if(vari->no < glovarcnt)
+    {
+        if(ifprint)cout<<endl<<"setalloc reg:"<<regname[no]<<" var:v"<<vari->no<<endl;
+        cout<<"t6"<<" = "<<regname[no]<<endl;
+        cout<<"load v"<<vari->no<<" "<<regname[no]<<endl;
+        cout<<"loadaddr v"<<vari->no<<" t3"<<endl;
+        cout<<"t3[0] = t6"<<endl;
+        if(ifprint)cout<<endl;
+    }
+    else
+    {
+        if(ifprint)cout<<endl<<"setalloc reg:"<<regname[no]<<" var:"<<vari->localno<<endl;
+        cout<<"t6"<<" = "<<regname[no]<<endl;
+        cout<<"load "<<vari->localno<<" "<<regname[no]<<endl;
+        cout<<"store t6 "<<vari->localno<<endl;
+        if(ifprint)cout<<endl;
+    }
+    vari->regid = no;
+    //printf("give value here : %d %d\n",vari->regid,vari->no);
+    Reg[no].varsto = vari->no;
+    Reg[no].wherereg = vari->no;
+
+    int nowline = root->numinfun;
+    Var tmp = *vari;
+
+    while(root->sibling != NULL && (root->live[vari->no] == 1 || root->sibling->live[vari->no] == 1))
+          root = root->sibling;
+    if(root->live[vari->no] == 0)tmp.edtm = root->numinfun - 1;
+    else tmp.edtm = root->numinfun;
+    tmp.funcname = funcname;
+    vainrg[vainrgnum++] = tmp;
+    //printf("the value of i is %d\n",i);
+}
+
+bool cmp(Var a, Var b)
+{
+    return a.edtm > b.edtm;
+}
+
+int linearscan()
+{
+    sort(vainrg,vainrg+REGNUM,cmp);
+    return vainrg[0].regid;
+}
+
+int regallo(Treenode *root,Var *vari,string funcname)
+{
+    int i,j;
+    if(vari->regid != -1)return vari->regid;
+    int order[REGNUM] = {13,14,15,1,2,3,4,5,6,7,8,9,10,11,12,0,16,17,18,19,20,21,22,23,24,25,26,27};
+    for(j=0;j<REGNUM;j++)
+    {
+        i = order[j];
         if(Reg[i].useable == 0)continue;
-        if(Reg[i].varsto != -1)
+        if(Reg[i].varsto == -1)
         {
-            if(root->live[varsto] == 0)expire(i);
-        }
-        if(root->live[varsto] == -1)
-        {
-            setalloc(vari,i);
+            setalloc(root,vari,i,funcname);
             return i;
         }
     }
-    
+    for(j=0;j<REGNUM;j++)
+    {
+        i = order[j];
+        if(Reg[i].varsto != -1)
+            if(root->live[Reg[i].varsto] == 0)
+            {
+                expire(i,1);
+                setalloc(root,vari,i,funcname);
+                return i;
+            }
+    }
+
+    i = linearscan();
+    expire(i,1);
+    setalloc(root,vari,i,funcname);
+    return i;
 }
 
-void genexp1(Treenode *root)
+void genexp1(Treenode *root,string funcname)
 {
-
+    int rg1,rg2,rg;
+    if(root->child[1]->speckind.rtvkind == VarK)
+    {
+        string name = root->child[1]->attr.name;
+        //if(symtab.count(name)>0 && symtab[name]->regid!=-1)
+            //expire(symtab[name]->regid,1);
+        rg1 = regallo(root,symtab[name],funcname);
+    }
+    else
+    {
+        rg1 = 17;
+        cout<<"t4 = "<<root->child[1]->attr.val<<endl;
+    }
+    if(root->child[2]->speckind.rtvkind == VarK)
+    {
+        string name = root->child[2]->attr.name;
+        //if(symtab.count(name)>0 && symtab[name]->regid!=-1)
+            //expire(symtab[name]->regid,1);
+        rg2 = regallo(root,symtab[name],funcname);
+    }
+    else
+    {
+        rg2 = 18;
+        cout<<"t5 = "<<root->child[2]->attr.val<<endl;
+    }
+    rg = regallo(root,symtab[string(root->child[0]->attr.name)],funcname);
+    cout<<regname[rg]<<" = "<<regname[rg1];
+    if(root->twop == CalOpK)
+    {
+        int ttt = root->attr.calop;
+        if(ttt == AddK)cout<<" + ";
+        else if(ttt == SubK)cout<<" - ";
+        else if(ttt == MulK)cout<<" * ";
+        else if(ttt == DivK)cout<<" / ";
+        else cout<<" % ";
+    }
+    else
+    {
+        int ttt = root->attr.logop;
+        if(ttt == AndK)cout<<" && ";
+        else if(ttt == OrK)cout<<" || ";
+        else if(ttt == SmK)cout<<" < ";
+        else if(ttt == EqK)cout<<" == ";
+        else if(ttt == GrK)cout<<" > ";
+        else cout<<" != ";
+    }
+    cout<<regname[rg2]<<endl;
 }
 
-void genexp(Treenode *root)
+void genexp2(Treenode *root,string funcname)
 {
+    int rg,rg1;
+    if(root->child[1]->speckind.rtvkind == VarK)
+    {
+        string name = root->child[1]->attr.name;
+        //if(symtab.count(name)>0 && symtab[name]->regid!=-1)
+            //expire(symtab[name]->regid,1);
+        rg1 = regallo(root,symtab[name],funcname);
+    }
+    else
+    {
+        rg1 = 17;
+        cout<<"t4 = "<<root->child[1]->attr.val<<endl;
+    }
+    rg = regallo(root,symtab[string(root->child[0]->attr.name)],funcname);
+    cout<<regname[rg]<<" = !"<<regname[rg1]<<endl;
+}
+
+void genexp3(Treenode *root,string funcname)
+{
+    int rg,rg1;
+    if(root->child[1]->speckind.rtvkind == VarK)
+    {
+        string name = root->child[1]->attr.name;
+        //if(symtab.count(name)>0 && symtab[name]->regid!=-1)
+            //expire(symtab[name]->regid,1);
+        rg1 = regallo(root,symtab[name],funcname);
+    }
+    else
+    {
+        rg1 = 17;
+        cout<<"t4 = "<<root->child[1]->attr.val<<endl;
+    }
+    rg = regallo(root,symtab[string(root->child[0]->attr.name)],funcname);
+    cout<<regname[rg]<<" = -"<<regname[rg1]<<endl;
+}
+
+void genexp4(Treenode *root,string funcname)
+{
+    int rg,rg1;
+    if(root->child[1]->speckind.rtvkind == VarK)
+    {
+        string name = root->child[1]->attr.name;
+        //if(symtab.count(name)>0 && symtab[name]->regid!=-1)
+            //expire(symtab[name]->regid,1);
+        rg1 = regallo(root,symtab[name],funcname);
+    }
+    else
+    {
+        rg1 = 17;
+        cout<<"t4 = "<<root->child[1]->attr.val<<endl;
+    }
+    rg = regallo(root,symtab[string(root->child[0]->attr.name)],funcname);
+    cout<<regname[rg]<<" = "<<regname[rg1]<<endl;
+}
+
+void genexp5(Treenode *root,string funcname)
+{
+    int rg1,rg2;
+    cout<<"loadaddr "<<symtab[string(root->child[0]->attr.name)]->tmpname<<" t3"<<endl;
+    if(root->child[1]->speckind.rtvkind == VarK)
+    {
+        string name = root->child[1]->attr.name;
+        //if(symtab.count(name)>0 && symtab[name]->regid!=-1)
+            //expire(symtab[name]->regid,1);
+        rg1 = regallo(root,symtab[name],funcname);
+    }
+    else
+    {
+        rg1 = 17;
+        cout<<"t4 = "<<root->child[1]->attr.val<<endl;
+    }
+    cout<<"t3 = t3 + "<<regname[rg1]<<endl;
+    if(root->child[2]->speckind.rtvkind == VarK)
+    {
+        string name = root->child[2]->attr.name;
+        //if(symtab.count(name)>0 && symtab[name]->regid!=-1)
+            //expire(symtab[name]->regid,1);
+        rg2 = regallo(root,symtab[name],funcname);
+    }
+    else
+    {
+        rg2 = 18;
+        cout<<"t5 = "<<root->child[2]->attr.val<<endl;
+    }
+    cout<<"t3[0] = "<<regname[rg2]<<endl;
+}
+
+void genexp6(Treenode *root,string funcname)
+{
+    int rg,rg2;
+    cout<<"loadaddr "<<symtab[string(root->child[1]->attr.name)]->tmpname<<" t3"<<endl;
+    if(root->child[2]->speckind.rtvkind == VarK)
+    {
+        string name = root->child[2]->attr.name;
+        //if(symtab.count(name)>0 && symtab[name]->regid!=-1)
+            //expire(symtab[name]->regid,1);
+        rg2 = regallo(root,symtab[name],funcname);
+    }
+    else
+    {
+        rg2 = 18;
+        cout<<"t5 = "<<root->child[2]->attr.val<<endl;
+    }
+    cout<<"t3 = t3 + "<<regname[rg2]<<endl;
+    rg = regallo(root,symtab[string(root->child[0]->attr.name)],funcname);
+    cout<<regname[rg]<<" = t3[0]"<<endl;
+}
+
+void genexp7(Treenode *root,string funcname)
+{
+    int rg1,rg2;
+    if(root->child[0]->speckind.rtvkind == VarK)
+    {
+        string name = root->child[0]->attr.name;
+        //if(symtab.count(name)>0 && symtab[name]->regid!=-1)
+            //expire(symtab[name]->regid,1);
+        rg1 = regallo(root,symtab[name],funcname);
+    }
+    else
+    {
+        rg1 = 17;
+        cout<<"t4 = "<<root->child[0]->attr.val<<endl;
+    }
+    if(root->child[1]->speckind.rtvkind == VarK)
+    {
+        string name = root->child[1]->attr.name;
+        //if(symtab.count(name)>0 && symtab[name]->regid!=-1)
+            //expire(symtab[name]->regid,1);
+        rg2 = regallo(root,symtab[name],funcname);
+    }
+    else
+    {
+        rg2 = 18;
+        cout<<"t5 = "<<root->child[1]->attr.val<<endl;
+    }
+    cout<<"if "<<regname[rg1];
+
+    int ttt = root->attr.logop;
+    if(ttt == AndK)cout<<" && ";
+    else if(ttt == OrK)cout<<" || ";
+    else if(ttt == SmK)cout<<" < ";
+    else if(ttt == EqK)cout<<" == ";
+    else if(ttt == GrK)cout<<" > ";
+    else cout<<" != ";
+
+    cout<<regname[rg2]<<" goto "<<root->child[2]->attr.name<<endl;
+}
+
+void genexp8(Treenode *root,string funcname)
+{
+    for(int i=0;i<vainrgnum;i++)
+        if(vainrg[i].funcname == funcname)
+            expire(vainrg[i].regid,1);
+    cout<<"goto "<<root->child[0]->attr.name<<endl;
+}
+
+void genexp9(Treenode *root,string funcname)
+{
+    cout<<root->child[0]->attr.name<<":"<<endl;
+    for(int i=0;i<vainrgnum;i++)
+        if(vainrg[i].funcname == funcname)
+            expire(vainrg[i].regid,1);
+}
+
+void genexp10(Treenode *root,int pnum,string funcname)
+{
+    int rg1;
+    if(root->child[0]->speckind.rtvkind == VarK)
+    {
+        string name = root->child[0]->attr.name;
+        //if(symtab.count(name)>0 && symtab[name]->regid!=-1)
+            //expire(symtab[name]->regid,1);
+        rg1 = regallo(root,symtab[name],funcname);
+    }
+    else
+    {
+        rg1 = 17;
+        cout<<"t4 = "<<root->child[0]->attr.val<<endl;
+    }
+    cout<<regname[19+pnum]<<" = "<<regname[rg1]<<endl;
+}
+
+void genexp11(Treenode *root,string funcname)
+{
+    int rg;
+    for(int i=0;i<vainrgnum;i++)
+        if(vainrg[i].funcname == funcname)
+            expire(vainrg[i].regid,1);
+    cout<<"call "<<root->child[1]->attr.name<<endl;
+    rg = regallo(root,symtab[string(root->child[0]->attr.name)],funcname);
+    cout<<regname[rg]<<" = a0"<<endl;
+}
+
+void genexp12(Treenode *root,string funcname)
+{
+    int rg1;
+    if(root->child[0]->speckind.rtvkind == VarK)
+    {
+        string name = root->child[0]->attr.name;
+        //if(symtab.count(name)>0 && symtab[name]->regid!=-1)
+            //expire(symtab[name]->regid,1);
+        rg1 = regallo(root,symtab[name],funcname);
+    }
+    else
+    {
+        rg1 = 17;
+        cout<<"t4 = "<<root->child[0]->attr.val<<endl;
+    }
+    cout<<"a0 = "<<regname[rg1]<<endl;
+    if(root->sibling == NULL)
+    {
+        for(int i=0;i<vainrgnum;i++)
+            if(vainrg[i].funcname == funcname)
+                expire(vainrg[i].regid,1);
+    }
+    else
+    {
+        for(int i=0;i<vainrgnum;i++)
+            if(vainrg[i].funcname == funcname)
+                expire(vainrg[i].regid,0);
+    }
+    cout<<"return"<<endl;
+}
+
+void genexp(Treenode *root,string funcname)
+{
+    Treenode *tmp = root;
+    int lineno = 0;
+    while(tmp!=NULL)
+    {
+        tmp->numinfun = ++lineno;
+        tmp = tmp->sibling;
+    }
+
+    int pnum = 0;
     while(root!=NULL)
     {
         if(root->nodekind == ExpK)
         {
-            if(root->speckind.exp == TwOpK)genexp1(root);
-            else if(root->speckind.exp == NotK)genexp2(root);
-            else if(root->speckind.exp == MinusK)genexp3(root);
-            else if(root->speckind.exp == SSK)genexp4(root);
-            else if(root->speckind.exp == ASK)genexp5(root);
-            else if(root->speckind.exp == SAK)genexp6(root);
-            else if(root->speckind.exp == IFK)genexp7(root);
-            else if(root->speckind.exp == GotoK)genexp8(root);
-            else if(root->speckind.exp == LabelK)genexp9(root);
-            else if(root->speckind.exp == ParaK)genexp10(root);
-            else if(root->speckind.exp == CallK)genexp11(root);
-            else if(root->speckind.exp == RetK)genexp12(root);
+            if(root->speckind.exp == TwOpK)genexp1(root,funcname);
+            else if(root->speckind.exp == NotK)genexp2(root,funcname);
+            else if(root->speckind.exp == MinusK)genexp3(root,funcname);
+            else if(root->speckind.exp == SSK)genexp4(root,funcname);
+            else if(root->speckind.exp == ASK)genexp5(root,funcname);
+            else if(root->speckind.exp == SAK)genexp6(root,funcname);
+            else if(root->speckind.exp == IFK)genexp7(root,funcname);
+            else if(root->speckind.exp == GotoK)genexp8(root,funcname);
+            else if(root->speckind.exp == LabelK)genexp9(root,funcname);
+            else if(root->speckind.exp == ParaK)
+            {
+                pnum++;
+                genexp10(root,pnum,funcname);
+            }
+            else if(root->speckind.exp == CallK)
+            {
+                pnum = 0;
+                genexp11(root,funcname);
+            }
+            else if(root->speckind.exp == RetK)genexp12(root,funcname);
+
+            if(root->speckind.exp != RetK)
+            {
+                for(int i=0;i<vainrgnum;i++)
+                    if(vainrg[i].funcname == funcname)
+                        expire(vainrg[i].regid,1);
+            }
         }
         root = root->sibling;
     }
@@ -523,9 +947,9 @@ void genfundef(Treenode *root)
 
     for(int i=0;i<REGNUM;i++)Reg[i].useable = 1;
     Reg[0].useable = 0;
-    for(int i=0;i<root->child[0]->attr.val;i++)Reg[20+i].useable = 0;
+    for(int i=-4;i<8;i++)Reg[20+i].useable = 0;
 
-    genexp(root->child[1]);
+    genexp(root->child[1],(string)(root->attr.name));
     cout<<"end "<<root->attr.name<<endl;
 }
 
@@ -555,7 +979,7 @@ void Generate(Treenode *root)
     }
 }
 
-/*
+
 void Printsingle(Treenode *root)
 {
     if(root == NULL)
@@ -567,13 +991,13 @@ void Printsingle(Treenode *root)
     {
         printf("Varient Define:");
         printf("%s ",root->attr.name);
-        if (root->arrnum!=0)printf("%d",root->arrnum);\
+        if (root->arrnum!=0)printf("%d",root->arrnum);
         printf("\n");
         cout<<"liveness: "<<root->live<<endl;
     }
     else if(root->nodekind == FuncDefK)
     {
-        printf("Function Define:");
+        printf("Function Define: ");
         printf("%s\n",root->attr.name);
     }
     else if(root->nodekind == RtK)
@@ -633,14 +1057,13 @@ void Printree(Treenode *root,int dep)
         for(int i=0;i<MAXCHILDREN;i++)
             if(root->child[i]!=NULL)Printree(root->child[i],dep+1);
 
-
+        /*
         if(root->nodekind == ExpK || root->nodekind == VarDefK)
         {
             printf("{\nsucc 1:\n");Printsingle(root->succ[0]);
             printf("succ 2:\n");Printsingle(root->succ[1]);printf("}\n");
         }
-
+        */
         root = root->sibling;
     }
 }
-*/
