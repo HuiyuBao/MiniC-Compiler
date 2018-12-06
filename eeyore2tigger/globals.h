@@ -13,7 +13,7 @@ using namespace std;
 
 #define MAXCHILDREN 10
 #define MAXTOKENLEN 40
-#define BITLENGTH 100
+#define BITLENGTH 150
 #define REGNUM 28
 
 typedef int TokenType;
@@ -63,6 +63,7 @@ typedef struct var
     int localno;// -1 if global varient
     int regid;// where is the varient
     string tmpname;
+    int deftime;
     int edtm;
     string funcname;
     var()
@@ -90,25 +91,5 @@ static reg Reg[REGNUM];
 static map<string,Treenode *>labpos; // where is the label
 static map<string,Var *>symtab; //
 static string revsear[BITLENGTH];
-
-/*
-typedef struct environment
-{
-    struct environment *pre;
-    map<string,string>symTable;
-    map<string,int>symClass; // 0 for variable 1 for array
-    map<string,int>delList; // 0 not define 1 define    for function
-    map<string,string>funcPara;
-    map<string,int>paraClass;// 0 for variable 1 for array
-    int paracnt;
-    int varcnt;
-    environment(struct environment *_pre = NULL)
-    {
-        pre = _pre;
-        varcnt = 0;
-        paracnt = 0;
-    }
-}Env;
-*/
 
 #endif

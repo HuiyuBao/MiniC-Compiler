@@ -285,6 +285,24 @@ int maxparacnt;
 void genesym(Treenode *root)
 {
     Treenode *t = root;
+    int lineno;
+
+    while(t!=NULL)
+    {
+        if(t->nodekind == FuncDefK)
+        {
+            Treenode *tmp = t->child[1];
+            lineno = 0;
+            while(tmp!=NULL)
+            {
+                tmp->numinfun = ++lineno;
+                tmp = tmp->sibling;
+            }
+        }
+        t = t->sibling;
+    }
+
+    t = root;
     while(t!=NULL)
     {
         if(t->nodekind == VarDefK)
@@ -336,6 +354,7 @@ void genesym(Treenode *root)
                     symtab[name] = new Var;
                     symtab[name]->no = glovarcnt + totlocvarcnt;
                     symtab[name]->localno = t->arrnum;
+                    symtab[name]->deftime = tt->numinfun;
                     revsear[glovarcnt + totlocvarcnt] = name;
 
                     totlocvarcnt++;
@@ -369,6 +388,7 @@ void init(Treenode *root)
 
 void liveness(Treenode *root)
 {
+    Treenode *tmp = root;
     Treenode *t;
     while(root!=NULL)
     {
@@ -479,6 +499,50 @@ void liveness(Treenode *root)
         }
         root = root->sibling;
     }
+
+    root = tmp;
+    Treenode *be;
+    while(root!=NULL)
+    {
+        if(root->nodekind == FuncDefK)
+        {
+            t = root->child[1];
+            while(t!=NULL)
+            {
+                if(t->speckind.exp == GotoK && labpos[t->child[0]->attr.name]->numinfun < t->numinfun)
+                {
+                    be = labpos[t->child[0]->attr.name];
+                    Treenode *thro = be, *throo;
+                    while(thro!=t->sibling)
+                    {
+                        for(int i=0;i<glovarcnt;i++)
+                            if(thro->live[i] == 1)
+                            {
+                                throo = be;
+                                while(throo!=t->sibling)
+                                {
+                                    throo->live.set(i);
+                                    throo = throo->sibling;
+                                }
+                            }
+                        for(int i=glovarcnt;i<glovarcnt+totlocvarcnt;i++)
+                            if(thro->live[i] == 1 && symtab[revsear[i]]->deftime < be->numinfun)
+                            {
+                                throo = be;
+                                while(throo!=t->sibling)
+                                {
+                                    throo->live.set(i);
+                                    throo = throo->sibling;
+                                }
+                            }
+                        thro = thro->sibling;
+                    }
+                }
+                t = t->sibling;
+            }
+        }
+        root = root->sibling;
+    }
 }
 
 string regname[] = {"x0","s0","s1","s2","s3","s4","s5","s6","s7","s8","s9","s10","s11",
@@ -510,7 +574,7 @@ void expire(int no,int real)
     //printf("something %d %d %d %d\n",i,no,vainrg[i].regid,vainrg[i].no);
     if(vainrg[i].no < glovarcnt)
     {
-        if(ifprint)cout<<endl<<"expire reg:"<<regname[no]<<" var:v"<<vainrg[i].no<<endl;
+        if(ifprint)cout<<endl<<"expire reg:"<<regname[no]<<" var:"<<revsear[vainrg[i].no]<<endl;
         cout<<"t6"<<" = "<<regname[no]<<endl;
         cout<<"load v"<<vainrg[i].no<<" "<<regname[no]<<endl;
         cout<<"loadaddr v"<<vainrg[i].no<<" t3"<<endl;
@@ -519,7 +583,7 @@ void expire(int no,int real)
     }
     else
     {
-        if(ifprint)cout<<endl<<"expire reg:"<<regname[no]<<" var:"<<vainrg[i].localno<<endl;
+        if(ifprint)cout<<endl<<"expire reg:"<<regname[no]<<" var:"<<revsear[vainrg[i].no]<<endl;
         cout<<"t6 = "<<regname[no]<<endl;
         cout<<"load "<<vainrg[i].localno<<" "<<regname[no]<<endl;
         cout<<"store t6 "<<vainrg[i].localno<<endl;
@@ -541,7 +605,7 @@ void setalloc(Treenode *root,Var *vari,int no,string funcname)
     int i;
     if(vari->no < glovarcnt)
     {
-        if(ifprint)cout<<endl<<"setalloc reg:"<<regname[no]<<" var:v"<<vari->no<<endl;
+        if(ifprint)cout<<endl<<"setalloc "<<no<<" reg:"<<regname[no]<<" var:"<<revsear[vari->no]<<endl;
         cout<<"t6"<<" = "<<regname[no]<<endl;
         cout<<"load v"<<vari->no<<" "<<regname[no]<<endl;
         cout<<"loadaddr v"<<vari->no<<" t3"<<endl;
@@ -550,7 +614,7 @@ void setalloc(Treenode *root,Var *vari,int no,string funcname)
     }
     else
     {
-        if(ifprint)cout<<endl<<"setalloc reg:"<<regname[no]<<" var:"<<vari->localno<<endl;
+        if(ifprint)cout<<endl<<"setalloc "<<no<<" reg:"<<regname[no]<<" var:"<<revsear[vari->no]<<endl;
         cout<<"t6"<<" = "<<regname[no]<<endl;
         cout<<"load "<<vari->localno<<" "<<regname[no]<<endl;
         cout<<"store t6 "<<vari->localno<<endl;
@@ -580,7 +644,15 @@ bool cmp(Var a, Var b)
 
 int linearscan()
 {
-    sort(vainrg,vainrg+REGNUM,cmp);
+    sort(vainrg,vainrg+vainrgnum,cmp);
+    /*
+    for(int i=0;i<REGNUM;i++)
+    {
+        printf("aaaaa %d %d ",vainrg[i].regid,vainrg[i].edtm);
+        cout<<revsear[vainrg[i].no]<<endl;;
+    }
+    */
+    //cout<<"aaaaaa "<<vainrg[0].regid<<" "<<vainrg[0].edtm;
     return vainrg[0].regid;
 }
 
@@ -593,12 +665,15 @@ int regallo(Treenode *root,Var *vari,string funcname)
     {
         i = order[j];
         if(Reg[i].useable == 0)continue;
+        if(Reg[i].varsto!=-1 && root->live[Reg[i].varsto] == 0)
+            expire(i,1);
         if(Reg[i].varsto == -1)
         {
             setalloc(root,vari,i,funcname);
             return i;
         }
     }
+    /*
     for(j=0;j<REGNUM;j++)
     {
         i = order[j];
@@ -610,7 +685,7 @@ int regallo(Treenode *root,Var *vari,string funcname)
                 return i;
             }
     }
-
+    */
     i = linearscan();
     expire(i,1);
     setalloc(root,vari,i,funcname);
@@ -721,6 +796,7 @@ void genexp4(Treenode *root,string funcname)
         rg1 = 17;
         cout<<"t4 = "<<root->child[1]->attr.val<<endl;
     }
+    //cout<<symtab[string(root->child[0]->attr.name)]->no<<endl;;
     rg = regallo(root,symtab[string(root->child[0]->attr.name)],funcname);
     cout<<regname[rg]<<" = "<<regname[rg1]<<endl;
 }
@@ -820,18 +896,22 @@ void genexp7(Treenode *root,string funcname)
 
 void genexp8(Treenode *root,string funcname)
 {
+    /*
     for(int i=0;i<vainrgnum;i++)
         if(vainrg[i].funcname == funcname)
             expire(vainrg[i].regid,1);
+    */
     cout<<"goto "<<root->child[0]->attr.name<<endl;
 }
 
 void genexp9(Treenode *root,string funcname)
 {
     cout<<root->child[0]->attr.name<<":"<<endl;
+    /*
     for(int i=0;i<vainrgnum;i++)
         if(vainrg[i].funcname == funcname)
             expire(vainrg[i].regid,1);
+    */
 }
 
 void genexp10(Treenode *root,int pnum,string funcname)
@@ -855,9 +935,11 @@ void genexp10(Treenode *root,int pnum,string funcname)
 void genexp11(Treenode *root,string funcname)
 {
     int rg;
+    /*
     for(int i=0;i<vainrgnum;i++)
         if(vainrg[i].funcname == funcname)
             expire(vainrg[i].regid,1);
+    */
     cout<<"call "<<root->child[1]->attr.name<<endl;
     rg = regallo(root,symtab[string(root->child[0]->attr.name)],funcname);
     cout<<regname[rg]<<" = a0"<<endl;
@@ -896,14 +978,6 @@ void genexp12(Treenode *root,string funcname)
 
 void genexp(Treenode *root,string funcname)
 {
-    Treenode *tmp = root;
-    int lineno = 0;
-    while(tmp!=NULL)
-    {
-        tmp->numinfun = ++lineno;
-        tmp = tmp->sibling;
-    }
-
     int pnum = 0;
     while(root!=NULL)
     {
@@ -929,13 +1003,14 @@ void genexp(Treenode *root,string funcname)
                 genexp11(root,funcname);
             }
             else if(root->speckind.exp == RetK)genexp12(root,funcname);
-
+            /*
             if(root->speckind.exp != RetK)
             {
                 for(int i=0;i<vainrgnum;i++)
                     if(vainrg[i].funcname == funcname)
                         expire(vainrg[i].regid,1);
             }
+            */
         }
         root = root->sibling;
     }
@@ -959,6 +1034,7 @@ void Generate(Treenode *root)
     while(root!=NULL)
     {
         if(root->nodekind == VarDefK)genvardef(root);
+
         else
         {
             Treenode *t = root->child[1];
@@ -977,6 +1053,7 @@ void Generate(Treenode *root)
         if(root->nodekind == FuncDefK)genfundef(root);
         root = root->sibling;
     }
+
 }
 
 
