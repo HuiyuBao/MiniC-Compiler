@@ -935,12 +935,21 @@ void genexp10(Treenode *root,int pnum,string funcname)
 void genexp11(Treenode *root,string funcname)
 {
     int rg;
-    /*
+    int tmprecord[20];
+    memset(tmprecord,-1,sizeof(tmprecord));
     for(int i=0;i<vainrgnum;i++)
-        if(vainrg[i].funcname == funcname)
+        if(vainrg[i].funcname == funcname && vainrg[i].regid >= 13 && vainrg[i].regid <= 15)
+        {
+            tmprecord[vainrg[i].regid] = Reg[vainrg[i].regid].varsto;
             expire(vainrg[i].regid,1);
-    */
+        }
+
     cout<<"call "<<root->child[1]->attr.name<<endl;
+
+    for(int i=13;i<=15;i++)
+        if(tmprecord[i]!=-1)
+            setalloc(root,symtab[revsear[tmprecord[i]]],i,funcname);
+
     rg = regallo(root,symtab[string(root->child[0]->attr.name)],funcname);
     cout<<regname[rg]<<" = a0"<<endl;
 }
