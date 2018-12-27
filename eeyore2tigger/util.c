@@ -704,8 +704,10 @@ void genexp1(Treenode *root,string funcname)
     }
     else
     {
-        rg1 = 17;
-        cout<<"t4 = "<<root->child[1]->attr.val<<endl;
+        if(root->child[1]->attr.val!=0)
+        {rg1 = 17;
+         cout<<"t4 = "<<root->child[1]->attr.val<<endl;}
+        else rg1 = 0;
     }
     if(root->child[2]->speckind.rtvkind == VarK)
     {
@@ -716,10 +718,32 @@ void genexp1(Treenode *root,string funcname)
     }
     else
     {
-        rg2 = 18;
-        cout<<"t5 = "<<root->child[2]->attr.val<<endl;
+        if(root->child[2]->attr.val!=0)
+        {rg2 = 18;
+         cout<<"t5 = "<<root->child[2]->attr.val<<endl;}
+        else rg2 = 0;
     }
     rg = regallo(root,symtab[string(root->child[0]->attr.name)],funcname);
+    if(rg1 == 0)
+    {
+        if(root->twop == CalOpK)
+        {
+            int ttt = root->attr.calop;
+            if(ttt == AddK)cout<<regname[rg]<<" = "<<regname[rg2]<<endl;
+            else if(ttt == SubK)cout<<regname[rg]<<" = -"<<regname[rg2]<<endl;
+            else if(ttt == MulK || ttt == DivK || ttt == ModK)cout<<regname[rg]<<" = x0"<<endl;
+            return ;
+        }
+    }
+    if(rg2 == 0)
+    {
+        if(root->twop == CalOpK)
+        {
+            int ttt = root->attr.calop;
+            if(ttt == AddK || ttt == SubK){cout<<regname[rg]<<" = "<<regname[rg1]<<endl;return;}
+            else if(ttt == MulK){cout<<regname[rg]<<" = x0"<<endl;return;}
+        }
+    }
     cout<<regname[rg]<<" = "<<regname[rg1];
     if(root->twop == CalOpK)
     {
@@ -755,8 +779,10 @@ void genexp2(Treenode *root,string funcname)
     }
     else
     {
-        rg1 = 17;
-        cout<<"t4 = "<<root->child[1]->attr.val<<endl;
+        if(root->child[1]->attr.val!=0)
+        {rg1 = 17;
+         cout<<"t4 = "<<root->child[1]->attr.val<<endl;}
+        else rg1 = 0;
     }
     rg = regallo(root,symtab[string(root->child[0]->attr.name)],funcname);
     cout<<regname[rg]<<" = !"<<regname[rg1]<<endl;
@@ -774,8 +800,10 @@ void genexp3(Treenode *root,string funcname)
     }
     else
     {
-        rg1 = 17;
-        cout<<"t4 = "<<root->child[1]->attr.val<<endl;
+        if(root->child[1]->attr.val!=0)
+        {rg1 = 17;
+         cout<<"t4 = "<<root->child[1]->attr.val<<endl;}
+        else rg1 = 0;
     }
     rg = regallo(root,symtab[string(root->child[0]->attr.name)],funcname);
     cout<<regname[rg]<<" = -"<<regname[rg1]<<endl;
@@ -793,8 +821,10 @@ void genexp4(Treenode *root,string funcname)
     }
     else
     {
-        rg1 = 17;
-        cout<<"t4 = "<<root->child[1]->attr.val<<endl;
+        if(root->child[1]->attr.val!=0)
+        {rg1 = 17;
+         cout<<"t4 = "<<root->child[1]->attr.val<<endl;}
+        else rg1 = 0;
     }
     //cout<<symtab[string(root->child[0]->attr.name)]->no<<endl;;
     rg = regallo(root,symtab[string(root->child[0]->attr.name)],funcname);
@@ -814,8 +844,10 @@ void genexp5(Treenode *root,string funcname)
     }
     else
     {
-        rg1 = 17;
-        cout<<"t4 = "<<root->child[1]->attr.val<<endl;
+        if(root->child[1]->attr.val!=0)
+        {rg1 = 17;
+         cout<<"t4 = "<<root->child[1]->attr.val<<endl;}
+        else rg1 = 0;
     }
     cout<<"t3 = t3 + "<<regname[rg1]<<endl;
     if(root->child[2]->speckind.rtvkind == VarK)
@@ -827,8 +859,10 @@ void genexp5(Treenode *root,string funcname)
     }
     else
     {
-        rg2 = 18;
-        cout<<"t5 = "<<root->child[2]->attr.val<<endl;
+        if(root->child[2]->attr.val!=0)
+        {rg2 = 18;
+         cout<<"t5 = "<<root->child[2]->attr.val<<endl;}
+        else rg2 = 0;
     }
     cout<<"t3[0] = "<<regname[rg2]<<endl;
 }
@@ -846,8 +880,10 @@ void genexp6(Treenode *root,string funcname)
     }
     else
     {
-        rg2 = 18;
-        cout<<"t5 = "<<root->child[2]->attr.val<<endl;
+        if(root->child[2]->attr.val!=0)
+        {rg2 = 18;
+         cout<<"t5 = "<<root->child[2]->attr.val<<endl;}
+        else rg2 = 0;
     }
     cout<<"t3 = t3 + "<<regname[rg2]<<endl;
     rg = regallo(root,symtab[string(root->child[0]->attr.name)],funcname);
@@ -866,8 +902,10 @@ void genexp7(Treenode *root,string funcname)
     }
     else
     {
-        rg1 = 17;
-        cout<<"t4 = "<<root->child[0]->attr.val<<endl;
+        if(root->child[0]->attr.val!=0)
+        {rg1 = 17;
+         cout<<"t4 = "<<root->child[0]->attr.val<<endl;}
+        else rg1 = 0;
     }
     if(root->child[1]->speckind.rtvkind == VarK)
     {
@@ -878,8 +916,10 @@ void genexp7(Treenode *root,string funcname)
     }
     else
     {
-        rg2 = 18;
-        cout<<"t5 = "<<root->child[1]->attr.val<<endl;
+        if(root->child[1]->attr.val!=0)
+        {rg2 = 18;
+         cout<<"t5 = "<<root->child[1]->attr.val<<endl;}
+        else rg2 = 0;
     }
     cout<<"if "<<regname[rg1];
 
@@ -926,8 +966,10 @@ void genexp10(Treenode *root,int pnum,string funcname)
     }
     else
     {
-        rg1 = 17;
-        cout<<"t4 = "<<root->child[0]->attr.val<<endl;
+        if(root->child[0]->attr.val!=0)
+        {rg1 = 17;
+         cout<<"t4 = "<<root->child[0]->attr.val<<endl;}
+        else rg1 = 0;
     }
     cout<<regname[19+pnum]<<" = "<<regname[rg1]<<endl;
 }
@@ -966,8 +1008,10 @@ void genexp12(Treenode *root,string funcname)
     }
     else
     {
-        rg1 = 17;
-        cout<<"t4 = "<<root->child[0]->attr.val<<endl;
+        if(root->child[0]->attr.val!=0)
+        {rg1 = 17;
+         cout<<"t4 = "<<root->child[0]->attr.val<<endl;}
+        else rg1 = 0;
     }
     cout<<"a0 = "<<regname[rg1]<<endl;
     if(root->sibling == NULL)
